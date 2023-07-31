@@ -25,7 +25,7 @@ def print_tile_data(tile_types, tile_values):
 
 
 def DP(n, H, tile_types, tile_values):
-    memo = [[None] * n for i in range(n)] # initialize memo
+    memo = [[None for x in range(n)] for y in range(n)] # initialize memo
     return helper(n, H, tile_types, tile_values, 0, 0, 0, 0, memo) # 0, 0, 0, 0 -> i, j, ptoken, mtoken
 
 
@@ -33,17 +33,22 @@ def helper(n, H, tile_types, tile_values, i, j, ptoken, mtoken, memo):
     # NOTE: Dynamic programming algorithm checks if it's possible to reach bottom-right
     # corner without running out of HP. Returns True if possible, False otherwise.
 
-    # BASE CASE: memo exists
-    if memo[i][j] != None:
+    # BASE CASE: out of bounds
+    if (i == n) or (j == n):
+        return False
+    
+    # BASE CASE: memo[i][j] exists
+    if memo[i][j] is not None:
         return memo[i][j]
     
-    # BASE CASE: reached last square
-    if (i == n-1 and j == n-1):
-        if (tile_types[i][j] == 0) and (H - tile_values[i][j] < 0) and (ptoken == 0):
-            memo[i][j] = False
-        else:
-            memo[i][j] = True
-
+    # BASE CASE: neg health, no ptoken available
+    if (tile_types[i][j] == 0) and (H - tile_values[i][j] < 0) and (ptoken == 0):
+        memo[i][j] = False
+        return memo[i][j]
+    
+    # BASE CASE: reached last square with 0 or pos health
+    if (i == n-1) and (j == n-1):
+        memo[i][j] = True
         return memo[i][j]
 
     # initialize moves
@@ -58,103 +63,96 @@ def helper(n, H, tile_types, tile_values, i, j, ptoken, mtoken, memo):
 
     # current tile logic
     match tile_types[i][j]:
-        case 0: # DMG -> lose [value] HP ——————————————————————————————————————————————————————————————
+        case 0: # DMG -> lose HP ——————————————————————————————————————————————————————————————
             takeD = H - tile_values[i][j]
-
-            # BASE CASE: neg health, no ptoken available
-            if takeD < 0 and ptoken == 0:
-                memo[i][j] = False
-                return memo[i][j]
-            
-            # 0 or pos health, no ptoken available or don't use ptoken
-            if down == None:
-                down = helper(n, takeD, tile_types, tile_values, i+1, j, ptoken, mtoken, memo)
-            if right == None:
-                right = helper(n, takeD, tile_types, tile_values, i, j+1, ptoken, mtoken, memo)
             downPT = down
             rightPT = right
 
             # ptoken available
             if ptoken == 1:
-                # 0 or pos health, use ptoken
-                if downPT == None:
+                # any health, use ptoken
+                if downPT is None:
                     downPT = helper(n, H, tile_types, tile_values, i+1, j, ptoken-1, mtoken, memo)
-                if rightPT == None:
+                if rightPT is None:
                     rightPT = helper(n, H, tile_types, tile_values, i, j+1, ptoken-1, mtoken, memo)
+                
                 # neg health, must use ptoken
-                if takeD < 0: # neg health
-                    if (downPT == True) or (rightPT == True):
+                if takeD < 0:
+                    if True in {downPT, rightPT}:
                         memo[i][j] = True
                     else:
                         memo[i][j] = False
-
                     return memo[i][j]
+                
+            # 0 or pos health, ptoken not available or not used
+            if down is None:
+                down = helper(n, takeD, tile_types, tile_values, i+1, j, ptoken, mtoken, memo)
+            if right is None:
+                right = helper(n, takeD, tile_types, tile_values, i, j+1, ptoken, mtoken, memo)
 
-            # 0 or pos health, choose to use ptoken or not use ptoken
+            # 0 or pos health
             if True in {down, right, downPT, rightPT}:
                 memo[i][j] = True
             else:
                 memo[i][j] = False
-            return memo[i][j]
 
-        case 1: # HEAL -> gain [value] HP —————————————————————————————————————————————————————————————
+        case 1: # HEAL -> gain HP —————————————————————————————————————————————————————————————
 
             takeH = H + tile_values[i][j]
             doubleH = H + 2 * tile_values[i][j]
             
             # no mtoken available or don't use mtoken
-            if down == None:
-                down = helper(n, takeH, tile_types, tile_values, i+1, j, ptoken, mtoken, memo)
-            if right == None:
-                right = helper(n, takeH, tile_types, tile_values, i, j+1, ptoken, mtoken, memo)
             downMT = down
             rightMT = right
+            if down is None:
+                down = helper(n, takeH, tile_types, tile_values, i+1, j, ptoken, mtoken, memo)
+            if right is None:
+                right = helper(n, takeH, tile_types, tile_values, i, j+1, ptoken, mtoken, memo)
 
             # mtoken available
             if mtoken == 1:
-                if downMT == None:
+                if downMT is None:
                     downMT = helper(n, doubleH, tile_types, tile_values, i+1, j, ptoken, mtoken-1, memo)
-                if rightMT == None:
+                if rightMT is None:
                     rightMT = helper(n, doubleH, tile_types, tile_values, i, j+1, ptoken, mtoken-1, memo)
                 
             if True in {down, right, downMT, rightMT}:
                 memo[i][j] = True
             else:
                 memo[i][j] = False
-            return memo[i][j]
 
         case 2: # PTOKEN -> can nullify an instance of DMG ————————————————————————————————————————————
             if ptoken == 0:
-                ptoken += 1
+                ptoken = 1
             
-            if down == None:
+            if down is None:
                 down = helper(n, H, tile_types, tile_values, i+1, j, ptoken, mtoken, memo)
-            if right == None:
+            if right is None:
                 right = helper(n, H, tile_types, tile_values, i, j+1, ptoken, mtoken, memo)
 
             if True in {down, right}:
                 memo[i][j] = True
             else:
                 memo[i][j] = False
-            return memo[i][j]
 
         case 3: # MTOKEN -> can double an instance of HEAL ————————————————————————————————————————————
             if mtoken == 0:
-                mtoken += 1
+                mtoken = 1
             
-            if down == None:
+            if down is None:
                 down = helper(n, H, tile_types, tile_values, i+1, j, ptoken, mtoken, memo)
-            if right == None:
+            if right is None:
                 right = helper(n, H, tile_types, tile_values, i, j+1, ptoken, mtoken, memo)
 
             if True in {down, right}:
                 memo[i][j] = True
             else:
                 memo[i][j] = False
-            return memo[i][j]
 
         case _:
             return False
+        
+    return memo[i][j]
 
 
 def write_output_file(output_file_name, result):
