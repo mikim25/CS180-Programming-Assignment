@@ -1,0 +1,16 @@
+- n x n grid, top left to bottom right (down and right)
+- H HP (if < 0 after moving to tile, game over)
+- 4 tile types
+    - 0: damage (lose d HP)
+    - 1: heal (gain h HP)
+    - 2: protection (can nullify next instance of damage)
+    - 3: multiplier (can double next heal)
+
+- can hold maximum of 1 multiplier and 1 protection token at once
+- return boolean reporting if it's possible for player to finish game without game over
+- O(n^2)
+
+- python: can use numpy/scipy libraries and basic external libraries (math, random, etc.)
+
+- input: *.txt file parsed as 2nd arg to program
+- output: *_out.txt file with 1 for possible, 0 for impossible
