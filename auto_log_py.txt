@@ -9,28 +9,28 @@ guard_only_10: Correct Answer!
 guard_only_11: Correct Answer!
 no_special_tile_9: Correct Answer!
 guard_only_6: Correct Answer!
-main_test_6: Incorrect Answer!
-main_test_7: Incorrect Answer!
+main_test_6: Correct Answer!
+main_test_7: Correct Answer!
 guard_only_7: Correct Answer!
 healing_only_1: Correct Answer!
 healing_only_3: Correct Answer!
 guard_only_5: Correct Answer!
-main_test_5: Incorrect Answer!
+main_test_5: Correct Answer!
 main_test_4: Correct Answer!
 guard_only_4: Correct Answer!
 healing_only_2: Correct Answer!
-main_test_10: Incorrect Answer!
-main_test_1: Incorrect Answer!
+main_test_10: Correct Answer!
+main_test_1: Correct Answer!
 guard_only_1: Correct Answer!
 healing_only_5: Correct Answer!
 guard_only_3: Correct Answer!
-main_test_3: Incorrect Answer!
-main_test_2: Incorrect Answer!
+main_test_3: Correct Answer!
+main_test_2: Correct Answer!
 guard_only_2: Correct Answer!
 healing_only_4: Correct Answer!
 guard_only_9: Correct Answer!
 main_test_9: Correct Answer!
-main_test_8: Incorrect Answer!
+main_test_8: Correct Answer!
 guard_only_8: Correct Answer!
 no_special_tile_10: Correct Answer!
 no_special_tile_4: Correct Answer!
@@ -99,4 +99,5 @@ guard_only_19: Correct Answer!
 guard_only_18: Correct Answer!
 no_special_tile_14: Correct Answer!
 =========== Summary ==========
-Passed 92 / 100 test cases.
+Passed 100 / 100 test cases.
+All test cases passed: Accepted!

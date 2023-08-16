@@ -28,9 +28,8 @@ def print_tile_data(tile_types, tile_values):
 
 # current solution
 def DP(n, H, tile_types, tile_values):
-    memo = np.full((n, n), None) # initialize memo
+    memo = np.full((n, n, 4), None) # initialize memo
     minH = helper(n, H, tile_types, tile_values, 0, 0, 0, 0, memo) # 0, 0, 0, 0 -> i, j, ptoken, mtoken
-    print(minH)
     return minH <= H
 
 
@@ -39,6 +38,15 @@ def helper(n, H, tile_types, tile_values, i, j, ptoken, mtoken, memo):
     # corner without running out of HP; returns True if possible, False otherwise.
 
     # base cases ——————————————————————————————————————————————————————————————————————————————————————
+
+    if (ptoken == 0) and (mtoken == 0):
+        quad = 0
+    if (ptoken == 0) and (mtoken == 1):
+        quad = 1
+    if (ptoken == 1) and (mtoken == 0):
+        quad = 2
+    if (ptoken == 1) and (mtoken == 1):
+        quad = 3
 
     # out of bounds
     if (i >= n) or (j >= n):
@@ -51,14 +59,14 @@ def helper(n, H, tile_types, tile_values, i, j, ptoken, mtoken, memo):
         else:
             end = 0
 
-        if memo[i][j] is not None:
-            memo[i][j] = min(memo[i][j], end)
+        if memo[i][j][quad] is not None:
+            memo[i][j][quad] = min(memo[i][j][quad], end)
         else:
-            memo[i][j] = end
+            memo[i][j][quad] = end
 
     # memo otherwise exists
-    if memo[i][j] is not None:
-        return memo[i][j]
+    if memo[i][j][quad] is not None:
+        return memo[i][j][quad]
     
     down = math.inf
     right = math.inf
@@ -102,8 +110,8 @@ def helper(n, H, tile_types, tile_values, i, j, ptoken, mtoken, memo):
         case _:
             print("Invalid tile type!")
 
-    memo[i][j] = min(down, right, downPT, rightPT, downMT, rightMT)
-    return memo[i][j]
+    memo[i][j][quad] = min(down, right, downPT, rightPT, downMT, rightMT)
+    return memo[i][j][quad]
 
 
 # previous solution
