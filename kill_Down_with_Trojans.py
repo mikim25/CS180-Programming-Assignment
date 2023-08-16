@@ -1,5 +1,7 @@
+# python PA_checker.py
+# python kill_Down_with_Trojans.py
 import numpy as np
-import scipy
+import math
 
 def load_input_file(file_name):
     with open(file_name, 'r') as file:
@@ -24,8 +26,92 @@ def print_tile_data(tile_types, tile_values):
     print(tile_values)
 
 
+# current solution
 def DP(n, H, tile_types, tile_values):
-    memo = np.full((n, 4*n), None) # initialize memo
+    memo = np.full((n, n), None) # initialize memo
+    minH = helper(n, H, tile_types, tile_values, 0, 0, 0, 0, memo) # 0, 0, 0, 0 -> i, j, ptoken, mtoken
+    print(minH)
+    return minH <= H
+
+
+def helper(n, H, tile_types, tile_values, i, j, ptoken, mtoken, memo):
+    # NOTE: Dynamic programming algorithm to check if it's possible to reach bottom-right
+    # corner without running out of HP; returns True if possible, False otherwise.
+
+    # base cases ——————————————————————————————————————————————————————————————————————————————————————
+
+    # out of bounds
+    if (i >= n) or (j >= n):
+        return math.inf
+    
+    # reached last square
+    if (i == n-1) and (j == n-1):
+        if (tile_types[i][j] == 0) and (ptoken == 0):
+            end = tile_values[i][j]
+        else:
+            end = 0
+
+        if memo[i][j] is not None:
+            memo[i][j] = min(memo[i][j], end)
+        else:
+            memo[i][j] = end
+
+    # memo otherwise exists
+    if memo[i][j] is not None:
+        return memo[i][j]
+    
+    down = math.inf
+    right = math.inf
+    downPT = math.inf
+    rightPT = math.inf
+    downMT = math.inf
+    rightMT = math.inf
+
+    # current tile logic
+    match tile_types[i][j]:
+        case 0: # DMG -> lose HP ——————————————————————————————————————————————————————————————————————
+
+            # use ptoken, don't take DMG
+            if ptoken == 1:
+                downPT  = helper(n, H, tile_types, tile_values, i+1, j, 0, mtoken, memo)
+                rightPT = helper(n, H, tile_types, tile_values, i, j+1, 0, mtoken, memo)
+
+            # don't use ptoken, take DMG
+            down  = helper(n, H, tile_types, tile_values, i+1, j, ptoken, mtoken, memo) + tile_values[i][j]
+            right = helper(n, H, tile_types, tile_values, i, j+1, ptoken, mtoken, memo) + tile_values[i][j]
+
+        case 1: # HEAL -> gain HP —————————————————————————————————————————————————————————————————————
+
+            # take double heal
+            if mtoken == 1:
+                downMT  = max(0, helper(n, H, tile_types, tile_values, i+1, j, ptoken, 0, memo) - 2*tile_values[i][j])
+                rightMT = max(0, helper(n, H, tile_types, tile_values, i, j+1, ptoken, 0, memo) - 2*tile_values[i][j])
+            
+            # take regular heal
+            down  = max(0, helper(n, H, tile_types, tile_values, i+1, j, ptoken, mtoken, memo) - tile_values[i][j])
+            right = max(0, helper(n, H, tile_types, tile_values, i, j+1, ptoken, mtoken, memo) - tile_values[i][j])
+
+        case 2: # PTOKEN -> can nullify an instance of DMG ————————————————————————————————————————————
+            down  = helper(n, H, tile_types, tile_values, i+1, j, 1, mtoken, memo)
+            right = helper(n, H, tile_types, tile_values, i, j+1, 1, mtoken, memo)
+
+        case 3: # MTOKEN -> can double an instance of HEAL ————————————————————————————————————————————
+            down  = helper(n, H, tile_types, tile_values, i+1, j, ptoken, 1, memo)
+            right = helper(n, H, tile_types, tile_values, i, j+1, ptoken, 1, memo)
+
+        case _:
+            print("Invalid tile type!")
+
+    memo[i][j] = min(down, right, downPT, rightPT, downMT, rightMT)
+    return memo[i][j]
+
+
+# previous solution
+'''
+# 3D MEMO
+def DP(n, H, tile_types, tile_values):
+    memo = np.full((n, n, 4), None) # initialize memo
+    # if holding ? ptoken and ? mtoken on this square, what's the max HP I can have when I get to the end?
     maxH = helper(n, H, tile_types, tile_values, 0, 0, 0, 0, memo) # 0, 0, 0, 0 -> i, j, ptoken, mtoken
     return maxH >= 0
 
@@ -37,35 +123,49 @@ def helper(n, H, tile_types, tile_values, i, j, ptoken, mtoken, memo):
     # base cases ——————————————————————————————————————————————————————————————————————————————————————
 
     if (ptoken == 0) and (mtoken == 0):
-        quad = 0*n + j
+        quad = 0
     if (ptoken == 0) and (mtoken == 1):
-        quad = 1*n + j
+        quad = 1
     if (ptoken == 1) and (mtoken == 0):
-        quad = 2*n + j
+        quad = 2
     if (ptoken == 1) and (mtoken == 1):
-        quad = 3*n + j
+        quad = 3
 
     # out of bounds
-    if (i == n) or (j == n):
-        return False
+    if (i >= n) or (j >= n):
+        return -1
     
     # game over (neg health, no ptoken)
     if (tile_types[i][j] == 0) and (H - tile_values[i][j] < 0) and (ptoken == 0):
-        return False
+        return -1
     
     # reached last square with 0 or pos health
     if (i == n-1) and (j == n-1):
-        memo[i][quad] = True
-        return memo[i][quad]
 
-    # memo[i][j] otherwise exists
-    if memo[i][j] is not None:
-        return memo[i][j]
+        if tile_types[i][j] == 0:
+            if ptoken == 0:
+                memo[i][j][quad] = H - tile_values[i][j]
+            else: # ptoken == 1
+                memo[i][j][quad] = H
+            return memo[i][j][quad]
+        elif tile_types[i][j] == 1:
+            if mtoken == 0:
+                memo[i][j][quad] = H + tile_values[i][j]
+            else: # mtoken == 1
+                memo[i][j][quad] = H + 2 * tile_values[i][j]
+        else: # token tile
+            memo[i][j][quad] = H
     
-    downPT = False
-    rightPT = False
-    downMT = False
-    rightMT = False
+        return memo[i][j][quad]
+
+    # memo otherwise exists
+    if memo[i][j][quad] is not None:
+        return memo[i][j][quad]
+    
+    downPT = -1
+    rightPT = -1
+    downMT = -1
+    rightMT = -1
 
     # current tile logic
     match tile_types[i][j]:
@@ -79,8 +179,8 @@ def helper(n, H, tile_types, tile_values, i, j, ptoken, mtoken, memo):
 
             # neg health, must use ptoken
             if takeD < 0:
-                memo[i][quad] = downPT or rightPT
-                return memo[i][quad]
+                memo[i][j][quad] = downPT or rightPT
+                return memo[i][j][quad]
                 
             # don't use ptoken
             H = takeD
@@ -109,8 +209,9 @@ def helper(n, H, tile_types, tile_values, i, j, ptoken, mtoken, memo):
     down = helper(n, H, tile_types, tile_values, i+1, j, ptoken, mtoken, memo)
     right = helper(n, H, tile_types, tile_values, i, j+1, ptoken, mtoken, memo)
 
-    memo[i][quad] = down or right or downPT or rightPT or downMT or rightMT
-    return memo[i][quad]
+    memo[i][j][quad] = max(down, right, downPT, rightPT, downMT, rightMT)
+    return memo[i][j][quad]
+'''
 
 def write_output_file(output_file_name, result):
     with open(output_file_name, 'w') as file:
@@ -132,4 +233,3 @@ if __name__ == "__main__":
         print("Usage: python kill_Down_with_Trojans.py a_file_name.txt")
     else:
         main(sys.argv[1])
-        
